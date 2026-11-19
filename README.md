@@ -1,0 +1,179 @@
+# Arrowstack — B2B Order Management Platform
+
+A full-stack implementation of Project 1 from the Arrowstack Full Stack Development Internship handbook.
+
+## Stack
+- Frontend: React 18 + Vite
+- Backend: Node.js + Express
+- Database: PostgreSQL
+- Authentication: JWT + bcrypt
+- Validation: express-validator
+- Database migrations: SQL migration script
+- Optional containerized database: Docker Compose
+
+## Implemented features
+- Customer and administrator roles
+- Registration and login with hashed passwords and JWT authentication
+- Product catalogue, search, category filter and stock visibility
+- Admin product create/update/delete
+- Cart management in the browser
+- Checkout with server-side stock validation and transaction-safe stock deduction
+- Customer order history and order detail
+- Admin order list and order status updates
+- Invoice view and printable invoice page
+- Activity log for important business actions
+- Input validation, centralized error handling and protected routes
+- PostgreSQL schema and seed data
+
+## Requirements
+- Node.js 20.11+ (Node 24 is also suitable)
+- npm
+- PostgreSQL 14+ OR Docker Desktop
+
+## 1. Start PostgreSQL
+
+### Option A — Docker (recommended)
+From the project root:
+
+```bash
+docker compose up -d db
+```
+
+This creates a local database with:
+- database: `arrowstack_b2b`
+- username: `postgres`
+- password: `postgres`
+- port: `5432`
+
+### Option B — Existing PostgreSQL
+Create a database named `arrowstack_b2b`, then update `server/.env` with your PostgreSQL username, password, host and port.
+
+## 2. Configure and install backend
+
+Open a terminal in the project root:
+
+```bash
+cd server
+```
+
+Create your environment file:
+
+```bash
+copy .env.example .env
+```
+
+On PowerShell, `copy` works. On macOS/Linux use `cp .env.example .env`.
+
+Install dependencies, create tables and seed demo data:
+
+```bash
+npm install
+npm run db:migrate
+npm run db:seed
+```
+
+Start the API:
+
+```bash
+npm run dev
+```
+
+Backend runs at `http://localhost:5000`.
+Health check: `http://localhost:5000/api/health`.
+
+## 3. Configure and start frontend
+
+Open a second terminal in the project root:
+
+```bash
+cd client
+npm install
+copy .env.example .env
+npm run dev
+```
+
+Open the Vite URL shown in the terminal, normally `http://localhost:5173`.
+
+## Demo accounts
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@arrowstack.demo` | `Admin@123` |
+| Customer | `customer@arrowstack.demo` | `Customer@123` |
+
+These are local demonstration credentials only. Change them before any public deployment.
+
+## 4. Main workflow to demonstrate
+
+1. Sign in as the customer.
+2. Browse products, search/filter and add items to the cart.
+3. Change quantities and place an order.
+4. Open My Orders and view the order/invoice.
+5. Sign out and sign in as admin.
+6. Open Products to add/edit stock or update a product.
+7. Open Orders to update an order status.
+8. Open Activity Log to review recorded actions.
+
+## API overview
+
+All routes are prefixed with `/api`.
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| POST | `/auth/register` | Public | Create customer account |
+| POST | `/auth/login` | Public | Login and receive JWT |
+| GET | `/auth/me` | Logged in | Current user |
+| GET | `/products` | Public | List/search/filter products |
+| GET | `/products/:id` | Public | Product details |
+| POST | `/products` | Admin | Create product |
+| PUT | `/products/:id` | Admin | Update product |
+| DELETE | `/products/:id` | Admin | Delete product (only if not ordered) |
+| POST | `/orders` | Customer | Checkout and create order |
+| GET | `/orders/my` | Customer | Customer order history |
+| GET | `/orders` | Admin | All orders |
+| GET | `/orders/:id` | Owner/Admin | Order detail |
+| PATCH | `/orders/:id/status` | Admin | Update order status |
+| GET | `/invoices/:orderId` | Owner/Admin | Invoice data |
+| GET | `/activity` | Admin | Activity records |
+
+See `docs/API.md` for request examples and `docs/TESTING.md` for a manual test checklist.
+
+## Database design
+
+Tables: `users`, `categories`, `products`, `orders`, `order_items`, `invoices`, `activity_logs`.
+
+- `users.role` is restricted to `admin` or `customer`.
+- Orders reference the customer who placed them.
+- Order items preserve the product name and price at purchase time.
+- Checkout uses a database transaction and conditional stock updates to prevent overselling.
+- An invoice is created with each successful order.
+
+## Important notes / limitations
+
+- This is a local internship/demo application. It does not connect to a real distributor, payment gateway, tax service or shipping provider.
+- Checkout is simulated; no real payment is collected.
+- JWT is stored in browser local storage for demo simplicity. For production, prefer secure, HttpOnly cookies, CSRF protections, rate limiting, HTTPS, secret management and a security review.
+- Invoice numbers and totals are generated by the application; tax is represented as 0% in this demo and can be extended to match a real jurisdiction.
+- Product image URLs are optional; placeholder styling is used when no image is supplied.
+
+## Project structure
+
+```text
+arrowstack_project1/
+├── client/                 React frontend
+├── server/                 Express API
+│   ├── migrations/         PostgreSQL schema
+│   ├── scripts/            migrate and seed scripts
+│   └── src/                routes, middleware, config
+├── docs/                   API and testing documentation
+├── docker-compose.yml
+└── README.md
+```
+
+## Troubleshooting
+
+- **Database connection refused:** make sure PostgreSQL/Docker is running and port 5432 is free.
+- **password authentication failed:** check `server/.env` matches your PostgreSQL credentials.
+- **relation does not exist:** run `npm run db:migrate` from `server`.
+- **Frontend cannot reach API:** verify backend is running on port 5000 and `client/.env` has `VITE_API_URL=http://localhost:5000/api`.
+- **Port already in use:** change the port in the relevant `.env` file and update the frontend API URL if needed.

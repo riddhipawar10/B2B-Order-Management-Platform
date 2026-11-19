@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: arrowstack-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: arrowstack_b2b
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - arrowstack_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d arrowstack_b2b"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  arrowstack_pgdata:
